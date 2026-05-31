@@ -81,10 +81,7 @@ const PORT =
 
 app.use(
   cors({
-    origin: [
-      "http://localhost:5173",
-      "https://github-clone-three-tan.vercel.app"
-    ],
+    origin: true,
     credentials: true
   })
 );
