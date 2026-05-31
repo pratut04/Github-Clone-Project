@@ -49,6 +49,10 @@ const FileViewer = () => {
         setFile] =
         useState(null);
 
+    const [repository,
+        setRepository] =
+        useState(null);
+
 
     const getLanguage =
         (filename) => {
@@ -111,6 +115,8 @@ const FileViewer = () => {
 
                 const repository =
                     await fetchRepositoryById(id);
+
+                setRepository(repository);
                 const currentBranch =
                     repository.branches.find(
                         (b) =>
@@ -142,7 +148,20 @@ const FileViewer = () => {
             }
         };
 
+    const currentUserId =
+        localStorage.getItem(
+            "userId"
+        );
+
+    const isOwner =
+
+        repository?.owner?._id ===
+        currentUserId ||
+
+        repository?.owner ===
+        currentUserId;
     if (loading) {
+
 
         return (
             <>
@@ -241,18 +260,24 @@ const FileViewer = () => {
 
                     </div>
 
-                    <button
-                        className="edit-btn"
-                        onClick={() =>
-                            navigate(
-                                `/repository/${id}/edit/${branch}/${encodeURIComponent(
-                                    file.path || file.name
-                                )}`
-                            )
-                        }
-                    >
-                        Edit File
-                    </button>
+                    {
+                        isOwner && (
+
+                            <button
+                                className="edit-btn"
+                                onClick={() =>
+                                    navigate(
+                                        `/repository/${id}/edit/${branch}/${encodeURIComponent(
+                                            file.path || file.name
+                                        )}`
+                                    )
+                                }
+                            >
+                                Edit File
+                            </button>
+
+                        )
+                    }
 
                 </div>
 

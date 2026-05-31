@@ -36,3 +36,38 @@ export const deleteProfile =
 
     return response.data;
   };
+
+export const toggleFollow =
+  async (
+    targetUserId,
+    userId
+  ) => {
+
+    const response =
+      await axios.patch(
+
+        `${API}/auth/follow/${targetUserId}`,
+
+        {
+          userId
+        }
+
+      );
+
+    return response.data;
+
+  };
+
+  export const fetchNotifications =
+  async (userId) => {
+
+    const response =
+      await axios.get(
+
+        `${API}/notifications/${userId}`
+
+      );
+
+    return response.data;
+
+  };

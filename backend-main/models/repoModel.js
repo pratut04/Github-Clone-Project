@@ -133,6 +133,24 @@ const RepositorySchema =
       required: true,
     },
 
+    stars: [
+      {
+        type: Schema.Types.ObjectId,
+        ref: "User"
+      }
+    ],
+
+    forkedFrom: {
+
+      type:
+        Schema.Types.ObjectId,
+
+      ref: "Repository",
+
+      default: null,
+    },
+
+
     issues: [
       {
         type:
@@ -143,9 +161,9 @@ const RepositorySchema =
     ],
 
   },
-  {
-    timestamps: true,
-  });
+    {
+      timestamps: true,
+    });
 
 module.exports =
   mongoose.models.Repository ||

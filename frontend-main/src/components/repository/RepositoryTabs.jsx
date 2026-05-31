@@ -4,15 +4,25 @@ const RepositoryTabs = ({
   activeTab,
   setActiveTab,
   issueCount,
+  isOwner,
 }) => {
 
-  const tabs = [
-    "Code",
-    "Issues",
-    "Pull Requests",
-    "Actions",
-    "Settings",
-  ];
+  const tabs = isOwner
+
+    ? [
+      "Code",
+      "Issues",
+      "Pull Requests",
+      "Actions",
+      "Settings",
+    ]
+
+    : [
+      "Code",
+      "Issues",
+      "Pull Requests",
+      "Actions",
+    ];
 
   return (
     <div className="repository-tabs">

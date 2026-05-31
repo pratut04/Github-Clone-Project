@@ -1,0 +1,65 @@
+.explore-page {
+
+  min-height: 100vh;
+
+  background: #0d1117;
+
+  padding: 40px 60px;
+
+  color: white;
+}
+
+.explore-header {
+
+  margin-bottom: 40px;
+}
+
+.explore-header h1 {
+
+  font-size: 38px;
+
+  font-weight: 700;
+
+  margin-bottom: 10px;
+}
+
+.explore-header p {
+
+  color: #8b949e;
+
+  font-size: 16px;
+}
+
+.explore-grid {
+
+  display: grid;
+
+  grid-template-columns:
+    repeat(
+      auto-fill,
+      minmax(320px, 1fr)
+    );
+
+  gap: 24px;
+}
+
+.explore-search{
+
+  width: 100%;
+
+  max-width: 500px;
+
+  margin-top: 20px;
+
+  padding: 12px 16px;
+
+  border-radius: 10px;
+
+  border: 1px solid #30363d;
+
+  background: #161b22;
+
+  color: white;
+
+  font-size: 15px;
+}

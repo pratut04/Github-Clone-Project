@@ -3,10 +3,9 @@ const express =
 
 const {
   signup,
-  login
-} = require(
-  "../controllers/authController"
-);
+  login,
+  toggleFollow
+} = require("../controllers/authController");
 
 const router =
   express.Router();
@@ -19,6 +18,11 @@ router.post(
 router.post(
   "/login",
   login
+);
+
+router.patch(
+  "/follow/:id",
+  toggleFollow
 );
 
 module.exports =

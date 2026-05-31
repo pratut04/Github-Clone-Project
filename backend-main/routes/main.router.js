@@ -10,14 +10,31 @@ const repoRouter =
 const issueRouter =
   require("./issue.router");
 
+const notificationRouter =
+  require(
+    "./notification.router"
+  );
+
 const authRouter =
   require("./auth.router");
 
 const mainRouter =
   express.Router();
 
-mainRouter.use(authRouter);
+mainRouter.use(
+  "/auth",
+  authRouter
+);
 
+mainRouter.get(
+  "/follow-test",
+  (req, res) => {
+    res.send("working");
+  }
+);
+mainRouter.use(
+  notificationRouter
+);
 mainRouter.use(userRouter);
 
 mainRouter.use(repoRouter);

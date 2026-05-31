@@ -6,6 +6,8 @@ import EditFile
 import CommitDetails
     from "./components/repository/CommitDetails";
 
+
+
 import {
     useNavigate,
     useRoutes,
@@ -38,6 +40,15 @@ import { useAuth }
 import CommitHistory
     from "./components/repository/CommitHistory";
 
+import Explore
+    from "./components/explore/Explore";
+
+import Repositories
+    from "./components/explore/Repositories";
+
+import Notifications
+    from "./components/notifications/Notifications";
+
 const ProjectRoutes = () => {
 
     const {
@@ -65,7 +76,9 @@ const ProjectRoutes = () => {
 
         /* NOT LOGGED IN */
         if (
-            !userId &&
+            (!userId ||
+                userId === "null") &&
+
             !publicRoutes.includes(
                 location.pathname
             )
@@ -88,7 +101,7 @@ const ProjectRoutes = () => {
 
         }
 
-    }, []);
+    }, [location.pathname]);
 
     const element = useRoutes([
         {
@@ -148,6 +161,19 @@ const ProjectRoutes = () => {
             element:
                 <CommitDetails />
         },
+        {
+            path: "/explore",
+            element: <Explore />
+        },
+        {
+            path: "/repositories",
+            element: <Repositories />
+        },
+        {
+            path: "/notifications",
+            element: <Notifications />
+        },
+
     ]);
 
     return element;

@@ -295,3 +295,20 @@
 
   color: white;
 }
+.repo-card-top{
+  display:flex;
+  justify-content:space-between;
+  align-items:flex-start;
+}
+
+.repo-owner{
+  color:#8b949e;
+  font-size:13px;
+  margin-bottom:6px;
+}
+
+.repo-name{
+  color:#58a6ff;
+  margin:0;
+  font-size:32px;
+}

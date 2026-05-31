@@ -47,6 +47,12 @@ repoRouter.patch(
   "/repo/pr/merge/:prId",
   repoController.mergePullRequest
 );
+
+repoRouter.patch(
+  "/repo/pr/resolve/:prId",
+  repoController.resolveMergeConflict
+);
+
 repoRouter.get(
   "/repo/pr/:repositoryId",
   repoController.getPullRequests
@@ -64,6 +70,32 @@ repoRouter.post(
 repoRouter.put(
   "/repo/pr/update/:prId",
   repoController.updatePullRequest
+);
+
+
+repoRouter.post(
+  "/repo/fork/:id",
+  repoController.forkRepository
+);
+
+repoRouter.patch(
+  "/repo/star/:id",
+  repoController.toggleStar
+);
+
+repoRouter.get(
+  "/repo/profile/stats/:userId",
+  repoController.getProfileStats
+);
+
+repoRouter.patch(
+  "/repo/star/:id",
+  repoController.toggleStar
+);
+
+repoRouter.get(
+  "/repo/profile/stats/:userId",
+  repoController.getProfileStats
 );
 /* =========================
    GET ALL REPOSITORIES

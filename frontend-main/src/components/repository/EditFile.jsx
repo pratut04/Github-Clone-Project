@@ -135,7 +135,24 @@ const EditFile = () => {
 
                         description:
                             "New Pull Request",
+
+                        changedFiles: [
+                            {
+                                filePath,
+
+                                oldContent:
+                                    file?.content || "",
+
+                                baseContent:
+                                    file?.content || "",
+
+                                newContent:
+                                    content || "",
+                            }
+                        ]
                     });
+
+
                 }
 
                 navigate(

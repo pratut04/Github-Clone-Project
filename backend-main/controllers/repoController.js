@@ -12,6 +12,101 @@ const Issue =
 const PullRequest =
   require("../models/pullRequestModel");
 
+const Notification =
+  require(
+    "../models/notificationModel"
+  );
+
+const toggleStar =
+  async (req, res) => {
+
+    try {
+
+      const {
+        userId
+      } = req.body;
+
+      const repo =
+        await Repository.findById(
+          req.params.id
+        );
+
+      if (!repo) {
+
+        return res.status(404)
+          .json({
+            message:
+              "Repository not found"
+          });
+
+      }
+
+      const alreadyStarred =
+        repo.stars.includes(
+          userId
+        );
+
+      if (alreadyStarred) {
+
+        repo.stars =
+          repo.stars.filter(
+            id =>
+              id.toString() !==
+              userId
+          );
+
+      } else {
+
+        repo.stars.push(
+          userId
+        );
+
+        if (
+          String(repo.owner) !==
+          String(userId)
+        ) {
+
+          await Notification.create({
+
+            recipient:
+              repo.owner,
+
+            sender:
+              userId,
+
+            message:
+              `starred ${repo.name}`
+
+          });
+
+        }
+
+      }
+
+      await repo.save();
+
+      res.json({
+
+        stars:
+          repo.stars.length,
+
+        starred:
+          !alreadyStarred
+
+      });
+
+    } catch (err) {
+
+      res.status(500)
+        .json({
+          message:
+            err.message
+        });
+
+    }
+
+  };
+
 /* =========================
    CREATE REPOSITORY
 ========================= */
@@ -149,12 +244,28 @@ async function getAllRepositories(
 
   try {
 
+    const {
+      search
+    } = req.query;
+
     const repositories =
-      await Repository.find({})
+      await Repository.find({
+
+        visibility: true,
+
+        name: {
+          $regex:
+            search || "",
+          $options: "i"
+        }
+
+      })
         .populate("owner")
         .populate("issues");
 
-    res.json(repositories);
+    res.json(
+      repositories
+    );
 
   } catch (err) {
 
@@ -186,8 +297,17 @@ async function fetchRepositoryById(
 
     const repository =
       await Repository.findById(id)
+
         .populate("owner")
-        .populate("issues");
+
+        .populate("issues")
+
+        .populate({
+          path: "forkedFrom",
+          populate: {
+            path: "owner"
+          }
+        });
 
     if (!repository) {
 
@@ -199,9 +319,31 @@ async function fetchRepositoryById(
 
     }
 
-    res.status(200).json(
-      repository
+    const forkCount =
+      await Repository.countDocuments({
+
+        forkedFrom:
+          repository._id
+
+      });
+
+    console.log(
+      "REPO:",
+      repository.name
     );
+
+    console.log(
+      "FORK COUNT:",
+      forkCount
+    );
+
+    res.status(200).json({
+
+      ...repository.toObject(),
+
+      forkCount
+
+    });
 
   } catch (err) {
 
@@ -216,7 +358,6 @@ async function fetchRepositoryById(
 
   }
 }
-
 /* =========================
    FETCH REPOSITORY BY NAME
 ========================= */
@@ -520,7 +661,7 @@ async function addFileToRepository(
       content,
     });
 
-    
+
 
     repository.markModified(
       "branches"
@@ -818,23 +959,9 @@ async function createPullRequest(
           b.name === branch
       );
 
+
     const allBranchFiles =
-      currentBranch.files
-        .filter(
-          (file) =>
-            file.type === "file"
-        )
-        .map((file) => ({
-
-          filePath:
-            file.path,
-
-          oldContent: "",
-
-          newContent:
-            file.content || "",
-        }));
-
+      req.body.changedFiles || [];
 
     const pr =
       await PullRequest.create({
@@ -904,6 +1031,7 @@ async function mergePullRequest(
           b.name === "main"
       );
 
+
     for (const changedFile of pr.changedFiles) {
 
       const existingFile =
@@ -912,12 +1040,11 @@ async function mergePullRequest(
             f.path === changedFile.filePath
         );
 
-      if (existingFile) {
+      /* =========================
+         NEW FILE
+      ========================= */
 
-        existingFile.content =
-          changedFile.newContent;
-
-      } else {
+      if (!existingFile) {
 
         mainBranch.files.push({
 
@@ -935,10 +1062,63 @@ async function mergePullRequest(
           content:
             changedFile.newContent,
         });
+
+        continue;
       }
 
-      
+      /* =========================
+         CONFLICT DETECTION
+      ========================= */
+
+      const currentMainContent =
+        existingFile.content || "";
+
+      const featureBaseContent =
+        changedFile.baseContent || "";
+
+      const featureNewContent =
+        changedFile.newContent || "";
+
+      /*
+         Conflict means:
+         main changed AFTER branch created
+      */
+
+      const hasConflict =
+
+        currentMainContent !== featureBaseContent &&
+
+        currentMainContent !== featureNewContent;
+
+      if (hasConflict) {
+
+        return res.status(409).json({
+
+          conflict: true,
+
+          filePath:
+            changedFile.filePath,
+
+          mainContent:
+            currentMainContent,
+
+          featureContent:
+            featureNewContent,
+
+          prId:
+            pr._id,
+        });
+      }
+
+      /* =========================
+         SAFE MERGE
+      ========================= */
+
+      existingFile.content =
+        featureNewContent;
     }
+
+
     mainBranch.commits.push({
 
       message:
@@ -1161,6 +1341,314 @@ async function updatePullRequest(
   }
 }
 
+async function resolveMergeConflict(
+  req,
+  res
+) {
+
+  try {
+
+    const pr =
+      await PullRequest.findById(
+        req.params.prId
+      );
+
+    if (!pr) {
+
+      return res.status(404)
+        .json({
+          error:
+            "PR not found",
+        });
+    }
+
+    const repository =
+      await Repository.findById(
+        pr.repositoryId
+      );
+
+    const mainBranch =
+      repository.branches.find(
+        (b) =>
+          b.name === "main"
+      );
+
+    const {
+      resolvedContent,
+      filePath,
+    } = req.body;
+
+    const existingFile =
+      mainBranch.files.find(
+        (f) =>
+          f.path === filePath
+      );
+
+    /* =========================
+       UPDATE FILE
+    ========================= */
+
+    if (existingFile) {
+
+      existingFile.content =
+        resolvedContent;
+
+    } else {
+
+      mainBranch.files.push({
+
+        name:
+          filePath
+            .split("/")
+            .pop(),
+
+        path:
+          filePath,
+
+        type:
+          "file",
+
+        content:
+          resolvedContent,
+      });
+    }
+
+    /* =========================
+       COMMIT
+    ========================= */
+
+    mainBranch.commits.push({
+
+      message:
+        `Resolved conflict: ${pr.title}`,
+
+      filePath,
+
+      oldContent:
+        "",
+
+      newContent:
+        resolvedContent,
+
+      committedAt:
+        new Date(),
+    });
+
+    /* =========================
+       CLOSE PR
+    ========================= */
+
+    pr.status =
+      "merged";
+
+    repository.markModified(
+      "branches"
+    );
+
+    await repository.save();
+
+    await pr.save();
+
+    res.json({
+
+      success: true,
+
+      message:
+        "Conflict resolved successfully",
+    });
+
+  } catch (err) {
+
+    console.error(err);
+
+    res.status(500)
+      .json({
+        error:
+          "Failed to resolve conflict",
+      });
+  }
+}
+
+async function forkRepository(
+  req,
+  res
+) {
+
+  try {
+
+    const {
+      owner
+    } = req.body;
+
+    const originalRepo =
+      await Repository.findById(
+        req.params.id
+      );
+
+    if (!originalRepo) {
+
+      return res.status(404)
+        .json({
+          error:
+            "Repository not found"
+        });
+    }
+
+    const forkedRepo =
+
+    new Repository({
+
+      name: `${originalRepo.name}-fork-${Date.now()}`,
+
+      description:
+        originalRepo.description,
+
+      visibility:
+        originalRepo.visibility,
+
+      owner,
+
+      forkedFrom:
+        originalRepo._id,
+
+      files:
+        JSON.parse(
+          JSON.stringify(
+            originalRepo.files
+          )
+        ),
+
+      commits:
+        JSON.parse(
+          JSON.stringify(
+            originalRepo.commits
+          )
+        ),
+
+      branches:
+        JSON.parse(
+          JSON.stringify(
+            originalRepo.branches
+          )
+        ),
+
+      issues: [],
+    });
+
+    await forkedRepo.save();
+
+    if (
+      String(originalRepo.owner) !==
+      String(owner)
+    ) {
+
+      await Notification.create({
+
+        recipient:
+          originalRepo.owner,
+
+        sender:
+          owner,
+
+        message:
+          `forked ${originalRepo.name}`
+
+      });
+
+    }
+
+    res.status(201).json({
+
+      message:
+        "Repository forked successfully",
+
+      repository:
+        forkedRepo,
+    });
+
+  } catch (err) {
+
+    console.error(err);
+
+    res.status(500).json({
+
+      error:
+        "Failed to fork repository",
+    });
+  }
+}
+async function getProfileStats(
+  req,
+  res
+) {
+
+  try {
+
+    const {
+      userId
+    } = req.params;
+
+    const repositories =
+      await Repository.find({
+        owner: userId
+      });
+
+    const repoCount =
+      repositories.length;
+
+    const starsReceived =
+      repositories.reduce(
+        (total, repo) =>
+          total +
+          (repo.stars?.length || 0),
+        0
+      );
+
+    const forksReceived =
+      await Repository.countDocuments({
+        forkedFrom: {
+          $in:
+            repositories.map(
+              repo => repo._id
+            )
+        }
+      });
+
+    const pullRequestsCreated =
+      await PullRequest.countDocuments({
+        createdBy: userId
+      });
+
+    res.json({
+
+      repositories:
+        repoCount,
+
+      stars:
+        starsReceived,
+
+      forks:
+        forksReceived,
+
+      commits:
+        pullRequestsCreated
+
+    });
+  } catch (err) {
+
+    console.error(err);
+
+    res.status(500).json({
+      error:
+        "Failed to fetch stats"
+    });
+
+  }
+
+}
+
+
+
 module.exports = {
 
   createRepository,
@@ -1189,4 +1677,8 @@ module.exports = {
   addReviewComment,
   createBranch,
   updatePullRequest,
+  resolveMergeConflict,
+  forkRepository,
+  toggleStar,
+  getProfileStats,
 };

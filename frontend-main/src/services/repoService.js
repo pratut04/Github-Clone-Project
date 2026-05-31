@@ -78,7 +78,7 @@ export const addFileToRepository =
   };
 
 
-  export const updateRepositoryFile =
+export const updateRepositoryFile =
   async (id, data) => {
 
     const response =
@@ -92,7 +92,7 @@ export const addFileToRepository =
     return response.data;
   };
 
-  export const restoreCommit =
+export const restoreCommit =
   async (
     repositoryId,
     commitId,
@@ -112,7 +112,7 @@ export const addFileToRepository =
     return response.data;
   };
 
-  export const createPullRequest =
+export const createPullRequest =
   async (data) => {
 
     const response =
@@ -138,7 +138,7 @@ export const mergePullRequest =
     return response.data;
   };
 
-  export const fetchPullRequests =
+export const fetchPullRequests =
   async (repositoryId) => {
 
     const response =
@@ -147,7 +147,7 @@ export const mergePullRequest =
       );
 
     return response.data;
-};
+  };
 
 export const addReviewComment =
   async (prId, data) => {
@@ -161,4 +161,73 @@ export const addReviewComment =
       );
 
     return response.data;
+  };
+
+
+
+export const forkRepository =
+  async (
+    repoId,
+    owner
+  ) => {
+
+    const response =
+      await axios.post(
+
+        `${API}/repo/fork/${repoId}`,
+
+        {
+          owner
+        }
+      );
+
+    return response.data;
+  };
+
+export const toggleStar =
+  async (
+    repoId,
+    userId
+  ) => {
+
+    const res =
+      await axios.patch(
+        `${API}/repo/star/${repoId}`,
+        {
+          userId
+        }
+      );
+
+    return res.data;
+
+  };
+
+
+export const searchRepositories =
+  async (query) => {
+
+    const response =
+      await axios.get(
+
+        `${API}/repo/all?search=${query}`
+
+      );
+
+    return response.data;
+
+  };
+
+
+export const fetchProfileStats =
+  async (userId) => {
+
+    const response =
+      await axios.get(
+
+        `${API}/repo/profile/stats/${userId}`
+
+      );
+
+    return response.data;
+
   };

@@ -4,6 +4,25 @@ import {
   useState,
   useRef
 } from "react";
+
+import {
+  toggleStar
+} from "../../services/repoService";
+
+import {
+  toggleFollow
+} from "../../services/userService";
+
+
+import MergeConflictModal
+  from "./MergeConflictModal";
+
+import {
+  forkRepository
+}
+  from "../../services/repoService";
+
+
 import FileTree
   from "./FileTree";
 import { getFileIcon } from "../../utils/fileIcons";
@@ -47,6 +66,9 @@ import CreateIssueModal
 import ReactMarkdown
   from "react-markdown";
 
+import remarkBreaks
+  from "remark-breaks";
+
 import "./repository.css";
 
 const RepositoryDetails = () => {
@@ -63,6 +85,14 @@ const RepositoryDetails = () => {
   const API =
     import.meta.env.VITE_API_URL;
 
+  const [showConflictModal,
+    setShowConflictModal] =
+    useState(false);
+
+  const [conflictData,
+    setConflictData] =
+    useState(null);
+
   const location =
     useLocation();
 
@@ -73,6 +103,16 @@ const RepositoryDetails = () => {
   const [repository,
     setRepository] =
     useState(null);
+
+  const [
+    starCount,
+    setStarCount
+  ] = useState(0);
+
+  const [
+    starred,
+    setStarred
+  ] = useState(false);
 
   const [loading,
     setLoading] =
@@ -124,6 +164,16 @@ const RepositoryDetails = () => {
   const [selectedIndex,
     setSelectedIndex] =
     useState(0);
+
+  const [
+    following,
+    setFollowing
+  ] = useState(false);
+
+  const [
+    followerCount,
+    setFollowerCount
+  ] = useState(0);
 
 
   const searchRef =
@@ -319,7 +369,59 @@ const RepositoryDetails = () => {
         const data =
           await fetchRepositoryById(id);
 
+        console.log(
+          "FULL REPO:",
+          data
+        );
+
+        console.log(
+          "FORKED FROM:",
+          data.forkedFrom
+        );
         setRepository(data);
+
+        const currentUserId =
+          localStorage.getItem(
+            "userId"
+          );
+
+        setFollowing(
+
+          data.owner.followers?.some(
+            (id) =>
+              id.toString() === currentUserId
+          )
+
+        );
+
+        console.log(
+          "OWNER FOLLOWERS:",
+          data.owner.followers
+        );
+
+        setFollowerCount(
+
+          data.owner.followers?.length || 0
+
+        );
+
+        const userId =
+          localStorage.getItem(
+            "userId"
+          );
+
+        setStarCount(
+          data.stars?.length || 0
+        );
+
+        setStarred(
+
+          data.stars?.some(
+            (id) =>
+              id.toString() ===
+              userId
+          )
+        );
 
       } catch (err) {
 
@@ -460,7 +562,29 @@ const RepositoryDetails = () => {
       </>
     );
   }
+  const currentUserId =
+    localStorage.getItem(
+      "userId"
+    );
+  const isOwner =
 
+    repository?.owner?._id?.toString() ===
+
+    currentUserId;
+  console.log(
+    "OWNER:",
+    repository?.owner?._id
+  );
+
+  console.log(
+    "CURRENT:",
+    currentUserId
+  );
+
+  console.log(
+    "IS OWNER:",
+    isOwner
+  );
   if (!repository) {
 
     return (
@@ -476,6 +600,73 @@ const RepositoryDetails = () => {
     );
   }
 
+
+  const handleFollow =
+    async () => {
+
+      try {
+
+        const currentUserId =
+          localStorage.getItem(
+            "userId"
+          );
+
+        const data =
+          await toggleFollow(
+
+            repository.owner._id,
+
+            currentUserId
+
+          );
+        console.log("FOLLOW RESPONSE:", data);
+        setFollowing(
+          data.following
+        );
+
+        setFollowerCount(
+          data.followers
+        );
+
+      } catch (err) {
+
+        console.error(err);
+
+      }
+
+    };
+  const handleStar =
+    async () => {
+
+      try {
+
+        const userId =
+          localStorage.getItem(
+            "userId"
+          );
+
+        const data =
+          await toggleStar(
+
+            repository._id,
+
+            userId
+          );
+
+        setStarCount(
+          data.stars
+        );
+
+        setStarred(
+          data.starred
+        );
+
+      } catch (err) {
+
+        console.error(err);
+
+      }
+    };
 
   const getCurrentTree = () => {
 
@@ -537,13 +728,10 @@ const RepositoryDetails = () => {
 
             <h1 className="repo-title">
 
-              {repository.owner
-                ?.username || "user"}
+              {repository.owner?.username || "user"}
 
               <span>
-
                 / {repository.name}
-
               </span>
 
             </h1>
@@ -555,26 +743,110 @@ const RepositoryDetails = () => {
 
             </p>
 
+            {
+              repository.forkedFrom && (
+
+                <p className="fork-info">
+
+                  🍴 Forked from
+
+                  {" "}
+
+                  {repository.forkedFrom.owner?.username}
+
+                  /
+
+                  {repository.forkedFrom.name}
+
+                </p>
+              )
+            }
+
           </div>
 
           <div className="repo-actions">
 
-            <button>
-              ⭐ Star
-            </button>
 
-            <button>
-              🍴 Fork
-            </button>
+            {!isOwner && (
+              <button
+                className="follow-btn"
+                onClick={handleFollow}
+              >
+                {following
+                  ? "Following"
+                  : "Follow"}
+              </button>
+            )}
+
 
             <button
-              className="new-file-btn"
-              onClick={() =>
-                setShowFileModal(true)
-              }
+              onClick={handleStar}
             >
-              + Add File
+
+              {
+                starred
+                  ? "⭐ Starred"
+                  : "⭐ Star"
+              }
+
+              {" "}
+
+              ({starCount})
+
             </button>
+
+
+            {
+              !isOwner && (
+
+                <button
+
+                  onClick={async () => {
+
+                    try {
+
+                      const response =
+                        await forkRepository(
+
+                          repository._id,
+
+                          localStorage.getItem(
+                            "userId"
+                          )
+                        );
+
+                      navigate(
+                        `/repository/${response.repository._id}`
+                      );
+
+                    } catch (err) {
+
+                      console.error(err);
+
+                    }
+                  }}
+                >
+                  🍴 {repository?.forkCount || 0}
+                </button>
+
+              )
+            }
+
+
+            {
+              isOwner && (
+
+                <button
+                  className="new-file-btn"
+                  onClick={() =>
+                    setShowFileModal(true)
+                  }
+                >
+                  + Add File
+                </button>
+
+              )
+            }
             <button
               className="edit-btn"
               onClick={() =>
@@ -586,12 +858,18 @@ const RepositoryDetails = () => {
               🕘 Commits
             </button>
 
-            <button
-              className="delete-btn"
-              onClick={handleDelete}
-            >
-              🗑 Delete
-            </button>
+            {
+              isOwner && (
+
+                <button
+                  className="delete-btn"
+                  onClick={handleDelete}
+                >
+                  🗑 Delete
+                </button>
+
+              )
+            }
 
           </div>
 
@@ -600,6 +878,7 @@ const RepositoryDetails = () => {
         {/* ================= TABS ================= */}
 
         <RepositoryTabs
+          isOwner={isOwner}
           activeTab={activeTab}
           setActiveTab={setActiveTab}
           issueCount={issues.length}
@@ -666,35 +945,41 @@ const RepositoryDetails = () => {
 
                 </select>
 
-                <button
+                {
+                  isOwner && (
 
-                  className="create-branch-btn"
+                    <button
 
-                  onClick={async () => {
+                      className="create-branch-btn"
 
-                    const branchName =
-                      prompt(
-                        "Enter branch name"
-                      );
+                      onClick={async () => {
 
-                    if (!branchName) return;
+                        const branchName =
+                          prompt(
+                            "Enter branch name"
+                          );
 
-                    await axios.post(
+                        if (!branchName) return;
 
-                      `${API}/repo/branch/${id}`,
+                        await axios.post(
 
-                      {
-                        branchName,
-                      }
-                    );
+                          `${API}/repo/branch/${id}`,
 
-                    getRepository();
-                  }}
-                >
+                          {
+                            branchName,
+                          }
+                        );
 
-                  + Branch
+                        getRepository();
+                      }}
+                    >
 
-                </button>
+                      + Branch
+
+                    </button>
+
+                  )
+                }
 
               </div>
 
@@ -993,45 +1278,54 @@ const RepositoryDetails = () => {
 
                   </div>
 
-                  <button
-                    type="button"
+                  {
+                    isOwner && (
 
-                    className="edit-readme-btn"
+                      <button
+                        type="button"
 
-                    disabled={!readmeFile}
+                        className="edit-readme-btn"
 
-                    onClick={(e) => {
+                        disabled={!readmeFile}
 
-                      e.preventDefault();
+                        onClick={(e) => {
 
-                      e.stopPropagation();
+                          e.preventDefault();
 
-                      if (!readmeFile) {
+                          e.stopPropagation();
 
-                        console.log("README NOT FOUND");
+                          if (!readmeFile) {
 
-                        return;
-                      }
+                            console.log("README NOT FOUND");
 
-                      console.log(readmeFile);
+                            return;
+                          }
 
-                      navigate(
-                        `/repository/${id}/edit/${selectedBranch}/${encodeURIComponent(
-                          readmeFile.path || readmeFile.name
-                        )}`
-                      );
-                    }}
-                  >
+                          console.log(readmeFile);
 
-                    ✏ Edit README
+                          navigate(
+                            `/repository/${id}/edit/${selectedBranch}/${encodeURIComponent(
+                              readmeFile.path || readmeFile.name
+                            )}`
+                          );
+                        }}
+                      >
 
-                  </button>
+                        ✏ Edit README
+
+                      </button>
+                    )
+                  }
 
                 </div>
 
                 <div className="readme-content markdown-body">
 
-                  <ReactMarkdown>
+                  <ReactMarkdown
+                    remarkPlugins={[
+                      remarkBreaks
+                    ]}
+                  >
 
                     {
                       readmeFile?.content ||
@@ -1058,16 +1352,31 @@ const RepositoryDetails = () => {
               <p>
                 {repository.description}
               </p>
+              {!isOwner && (
+
+                <button
+                  className="follow-btn"
+                  onClick={handleFollow}
+                >
+                  {following
+                    ? "Following"
+                    : "Follow"}
+
+                  {" "}
+                  ({followerCount})
+                </button>
+
+              )}
 
               <div className="repo-stats">
 
-                ⭐ 23 stars
+                ⭐ {starCount} Stars
 
               </div>
 
               <div className="repo-stats">
 
-                🍴 11 forks
+                🍴 Fork ({repository.forkCount || 0})
 
               </div>
 
@@ -1181,7 +1490,7 @@ const RepositoryDetails = () => {
               </div>
 
               {
-               pullRequests.length === 0 ? (
+                pullRequests.length === 0 ? (
 
                   <div className="tab-placeholder">
 
@@ -1282,7 +1591,7 @@ const RepositoryDetails = () => {
                             type="text"
 
                             placeholder=
-                            "Add review comment..."
+                            "Add review comment and tap enter..."
 
                             onKeyDown={async (e) => {
 
@@ -1323,6 +1632,7 @@ const RepositoryDetails = () => {
 
                         </div>
                         {
+                          isOwner &&
                           pr.status !== "merged" && (
 
                             <button
@@ -1334,15 +1644,37 @@ const RepositoryDetails = () => {
 
                               onClick={async (e) => {
 
-                                e.target.disabled = true;
 
-                                await mergePullRequest(
-                                  pr._id
-                                );
 
-                                loadPullRequests();
 
-                                getRepository();
+                                try {
+
+                                  await mergePullRequest(
+                                    pr._id
+                                  );
+
+                                  loadPullRequests();
+
+                                  getRepository();
+
+                                } catch (err) {
+
+                                  if (
+                                    err.response?.status === 409
+                                  ) {
+
+                                    setConflictData(
+                                      err.response.data
+                                    );
+
+                                    setShowConflictModal(true);
+
+                                  } else {
+
+                                    console.error(err);
+                                  }
+                                }
+
                               }}
                             >
                               Merge Pull Request
@@ -1422,6 +1754,71 @@ const RepositoryDetails = () => {
           />
         )
       }
+      {
+        isOwner &&
+        showConflictModal &&
+        conflictData && (
+
+          <MergeConflictModal
+
+            mainContent={
+              conflictData.mainContent
+            }
+
+            featureContent={
+              conflictData.featureContent
+            }
+
+            filePath={
+              conflictData.filePath
+            }
+
+            onClose={() => {
+
+              setShowConflictModal(false);
+
+              setConflictData(null);
+            }}
+
+            onResolve={async (
+              resolvedContent
+            ) => {
+
+              try {
+
+                await axios.patch(
+
+                  `${API}/repo/pr/resolve/${conflictData.prId}`,
+
+                  {
+                    resolvedContent,
+
+                    filePath:
+                      conflictData.filePath,
+                  }
+                );
+
+                setShowConflictModal(false);
+
+                setConflictData(null);
+
+                loadPullRequests();
+
+                getRepository();
+
+                alert(
+                  "Conflict resolved and PR merged!"
+                );
+
+              } catch (err) {
+
+                console.error(err);
+              }
+            }}
+          />
+        )
+      }
+
     </>
   );
 };

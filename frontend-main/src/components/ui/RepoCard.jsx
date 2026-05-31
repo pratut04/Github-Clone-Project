@@ -17,9 +17,17 @@ const RepoCard = ({
 
       <div className="repo-card-top">
 
-        <h3>
-          {repo.name}
-        </h3>
+        <div>
+
+          <div className="repo-owner">
+            {repo.owner?.username}
+          </div>
+
+          <h3 className="repo-name">
+            {repo.name}
+          </h3>
+
+        </div>
 
         <span>
           {repo.visibility
@@ -37,7 +45,7 @@ const RepoCard = ({
       <div className="repo-card-footer">
 
         <span>
-          ⭐ {repo.stars || 0}
+          ⭐ {repo.stars?.length || 0}
         </span>
 
         <span>

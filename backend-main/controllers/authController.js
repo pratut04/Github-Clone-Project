@@ -7,6 +7,140 @@ const User =
 const generateToken =
   require("../utils/generateToken");
 
+const Notification =
+  require(
+    "../models/notificationModel"
+  );
+
+
+
+async function toggleFollow(
+  req,
+  res
+) {
+
+  try {
+
+    const targetUserId =
+      req.params.id;
+
+    const { userId } =
+      req.body;
+
+    if (
+      targetUserId === userId
+    ) {
+
+      return res.status(400).json({
+        message:
+          "You cannot follow yourself"
+      });
+
+    }
+
+    const currentUser =
+      await User.findById(userId);
+
+    const targetUser =
+      await User.findById(
+        targetUserId
+      );
+
+    if (
+      !currentUser ||
+      !targetUser
+    ) {
+
+      return res.status(404).json({
+        message:
+          "User not found"
+      });
+
+    }
+
+    const alreadyFollowing =
+      currentUser.following.includes(
+        targetUserId
+      );
+
+    if (alreadyFollowing) {
+
+      currentUser.following.pull(
+        targetUserId
+      );
+
+      targetUser.followers.pull(
+        userId
+      );
+
+    } else {
+
+      currentUser.following.push(
+        targetUserId
+      );
+
+      targetUser.followers.push(
+        userId
+      );
+
+      if (
+        String(targetUserId) !==
+        String(userId)
+      ) {
+        console.log(
+          "FOLLOW NOTIFICATION",
+          {
+            recipient: targetUserId,
+            sender: userId
+          }
+        );
+        await Notification.create({
+
+          recipient:
+            targetUserId,
+
+          sender:
+            userId,
+
+          message:
+            "started following you"
+
+        });
+        console.log(
+          "NOTIFICATION SAVED"
+        );
+
+      }
+
+    }
+
+    await currentUser.save();
+
+    await targetUser.save();
+
+    res.json({
+
+      following:
+        !alreadyFollowing,
+
+      followers:
+        targetUser.followers.length
+
+    });
+
+  } catch (err) {
+
+    console.error(err);
+
+    res.status(500).json({
+      error: err.message
+    });
+
+  }
+
+}
+
+
 const signup =
   async (req, res) => {
 
@@ -53,25 +187,25 @@ const signup =
         });
 
       res.status(201)
-      .json({
+        .json({
 
-        token:
-          generateToken(
+          token:
+            generateToken(
+              user._id
+            ),
+
+          userId:
             user._id
-          ),
 
-        userId:
-          user._id
-
-      });
+        });
 
     } catch (error) {
 
       res.status(500)
-      .json({
-        message:
-          error.message
-      });
+        .json({
+          message:
+            error.message
+        });
 
     }
 
@@ -135,16 +269,20 @@ const login =
     } catch (error) {
 
       res.status(500)
-      .json({
-        message:
-          error.message
-      });
+        .json({
+          message:
+            error.message
+        });
 
     }
 
   };
-
 module.exports = {
+
   signup,
-  login
+
+  login,
+
+  toggleFollow
+
 };

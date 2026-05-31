@@ -25,12 +25,21 @@ import {
 } from "../../services/userService";
 
 import {
-  fetchUserRepositories
+  fetchUserRepositories,
+  fetchProfileStats,
 } from "../../services/repoService";
 
 import "./profile.css";
 
 const Profile = () => {
+
+  const [stats, setStats] =
+    useState({
+      repositories: 0,
+      stars: 0,
+      forks: 0,
+      commits: 0
+    });
 
   const [
     userDetails,
@@ -92,6 +101,12 @@ const Profile = () => {
         setRepositories(
           repoData.repositories || []
         );
+        const statsData =
+          await fetchProfileStats(
+            userId
+          );
+
+        setStats(statsData);
 
       } catch (err) {
 
@@ -141,21 +156,69 @@ const Profile = () => {
             }
           />
 
-          <button
-            className="profile-follow-btn"
-          >
-            Follow
-          </button>
+          <div className="profile-follow-stats">
+
+            <span>
+              {userDetails.followers?.length || 0}
+              {" "}Followers
+            </span>
+
+            <span>
+              {userDetails.following?.length || 0}
+              {" "}Following
+            </span>
+
+          </div>
 
           <div className="profile-stats">
 
-            <span>
-              120 Followers
-            </span>
+            <div className="stat-card">
 
-            <span>
-              44 Following
-            </span>
+              <h3>
+                {stats.repositories}
+              </h3>
+
+              <p>
+                Repositories
+              </p>
+
+            </div>
+
+            <div className="stat-card">
+
+              <h3>
+                {stats.stars}
+              </h3>
+
+              <p>
+                Stars
+              </p>
+
+            </div>
+
+            <div className="stat-card">
+
+              <h3>
+                {stats.forks}
+              </h3>
+
+              <p>
+                Forks
+              </p>
+
+            </div>
+
+            <div className="stat-card">
+
+              <h3>
+                {stats.commits}
+              </h3>
+
+              <p>
+                Commits
+              </p>
+
+            </div>
 
           </div>
 
@@ -178,7 +241,7 @@ const Profile = () => {
 
           {
             activeTab ===
-              "Overview" && (
+            "Overview" && (
 
               <>
                 <div className="heatmap-wrapper">
@@ -207,7 +270,7 @@ const Profile = () => {
 
           {
             activeTab ===
-              "Repositories" && (
+            "Repositories" && (
 
               <div className="profile-repo-section">
 
@@ -229,7 +292,7 @@ const Profile = () => {
 
           {
             activeTab ===
-              "Stars" && (
+            "Stars" && (
 
               <div className="profile-placeholder">
 
@@ -249,17 +312,35 @@ const Profile = () => {
 
           {
             activeTab ===
-              "Followers" && (
+            "Followers" && (
 
               <div className="profile-placeholder">
 
-                <h2>
-                  Followers
-                </h2>
+                <h2>Followers & Following</h2>
 
-                <p>
-                  120 followers
-                </p>
+                <div className="follow-stats">
+
+                  <div className="stat-card">
+
+                    <h3>
+                      {userDetails.followers?.length || 0}
+                    </h3>
+
+                    <p>Followers</p>
+
+                  </div>
+
+                  <div className="stat-card">
+
+                    <h3>
+                      {userDetails.following?.length || 0}
+                    </h3>
+
+                    <p>Following</p>
+
+                  </div>
+
+                </div>
 
               </div>
             )

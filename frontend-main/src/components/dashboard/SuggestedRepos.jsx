@@ -1,8 +1,16 @@
+import {
+  useNavigate
+} from "react-router-dom";
+
 import "./dashboard.css";
 
 const SuggestedRepos = ({
   repositories,
 }) => {
+
+  const navigate =
+    useNavigate();
+
   return (
     <aside className="dashboard-sidebar">
 
@@ -19,9 +27,21 @@ const SuggestedRepos = ({
             <div
               className="suggested-card"
               key={repo._id}
+
+              onClick={() =>
+                navigate(
+                  `/repository/${repo._id}`
+                )
+              }
+
+              style={{
+                cursor: "pointer"
+              }}
             >
 
-              <h4>{repo.name}</h4>
+              <h4>
+                {repo.name}
+              </h4>
 
               <p>
                 {repo.description ||

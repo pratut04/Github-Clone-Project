@@ -22,6 +22,9 @@ const PullRequestSchema =
                 oldContent: String,
 
                 newContent: String,
+
+                baseContent: String,
+                
             }
         ],
 

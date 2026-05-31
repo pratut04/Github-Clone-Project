@@ -102,8 +102,19 @@ const Dashboard = () => {
         const data =
           await fetchAllRepositories();
 
+        const currentUserId =
+          localStorage.getItem(
+            "userId"
+          );
+
         setSuggestedRepositories(
-          data || []
+
+          data.filter(
+            (repo) =>
+
+              repo.owner?._id !==
+              currentUserId
+          )
         );
 
       } catch (err) {

@@ -1,0 +1,35 @@
+const mongoose =
+  require("mongoose");
+
+const NotificationSchema =
+  new mongoose.Schema(
+    {
+      recipient: {
+        type:
+          mongoose.Schema.Types.ObjectId,
+        ref: "User"
+      },
+
+      sender: {
+        type:
+          mongoose.Schema.Types.ObjectId,
+        ref: "User"
+      },
+
+      message: String,
+
+      read: {
+        type: Boolean,
+        default: false
+      }
+    },
+    {
+      timestamps: true
+    }
+  );
+
+module.exports =
+  mongoose.model(
+    "Notification",
+    NotificationSchema
+  );

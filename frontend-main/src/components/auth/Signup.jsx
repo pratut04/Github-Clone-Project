@@ -35,7 +35,7 @@ const Signup = () => {
       setLoading(true);
 
       const res = await axios.post(
-        "http://localhost:3002/signup",
+        `${import.meta.env.VITE_API_URL}/auth/signup`,
         {
           username,
           email,
@@ -59,9 +59,15 @@ const Signup = () => {
 
     } catch (err) {
 
-      console.error(err);
+      console.error(
+        "SIGNUP ERROR:",
+        err.response?.data
+      );
 
-      alert("Signup Failed!");
+      alert(
+        err.response?.data?.message ||
+        "Signup Failed!"
+      );
 
     } finally {
 

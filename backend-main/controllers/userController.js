@@ -35,12 +35,21 @@ async function signup(req, res) {
     const hashedPassword = await bcrypt.hash(password, salt);
 
     const newUser = {
+
       username,
+
       password: hashedPassword,
+
       email,
+
       repositories: [],
-      followedUsers: [],
+
       starRepos: [],
+
+      followers: [],
+
+      following: []
+
     };
 
     const result = await usersCollection.insertOne(newUser);
