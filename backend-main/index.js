@@ -83,11 +83,11 @@ app.use(
   cors({
     origin: [
       "http://localhost:5173",
-      "https://github-clone-three-tan.vercel.app/auth"
-    ]
+      "https://github-clone-three-tan.vercel.app"
+    ],
+    credentials: true
   })
 );
-
 app.use(bodyParser.json());
 
 app.use(express.json());
