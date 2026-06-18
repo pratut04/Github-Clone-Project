@@ -12,6 +12,7 @@ import logo
 const Navbar = () => {
   const [notificationCount, setNotificationCount] =
     useState(0);
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   useEffect(() => {
 
@@ -68,83 +69,93 @@ const Navbar = () => {
 
       </div>
 
-      <div className="nav-links">
+      <button
+        className="nav-hamburger"
+        onClick={() => setIsMenuOpen(!isMenuOpen)}
+        aria-label="Toggle navigation menu"
+      >
+        {isMenuOpen ? "✕" : "☰"}
+      </button>
 
-        <Link to="/explore">
-          <span>Explore</span>
-        </Link>
+      <div className={`nav-menu-container ${isMenuOpen ? "active" : ""}`}>
+        <div className="nav-links">
 
-        <Link to="/repositories">
-          <span>Repositories</span>
-        </Link>
+          <Link to="/explore" onClick={() => setIsMenuOpen(false)}>
+            <span>Explore</span>
+          </Link>
 
-      </div>
+          <Link to="/repositories" onClick={() => setIsMenuOpen(false)}>
+            <span>Repositories</span>
+          </Link>
 
-      <div className="nav-right">
+        </div>
 
-        <Link to="/notifications">
+        <div className="nav-right">
 
-          <div className="notification-wrapper">
+          <Link to="/notifications" onClick={() => setIsMenuOpen(false)}>
 
-            <button
-              className="notification-btn"
-            >
-              🔔
-            </button>
+            <div className="notification-wrapper">
 
-            {notificationCount > 0 && (
-
-              <span
-                className="notification-badge"
+              <button
+                className="notification-btn"
               >
-                {notificationCount}
-              </span>
+                🔔
+              </button>
 
-            )}
+              {notificationCount > 0 && (
 
-          </div>
+                <span
+                  className="notification-badge"
+                >
+                  {notificationCount}
+                </span>
 
-        </Link>
+              )}
 
-        <Link to="/create">
-          <button className="create-btn">
-            Create Repository
+            </div>
+
+          </Link>
+
+          <Link to="/create" onClick={() => setIsMenuOpen(false)}>
+            <button className="create-btn">
+              Create Repository
+            </button>
+          </Link>
+
+          <Link to="/profile" onClick={() => setIsMenuOpen(false)}>
+            <button className="profile-btn">
+              Profile
+            </button>
+          </Link>
+
+          <button
+
+            className="logout-btn"
+
+            onClick={() => {
+
+              localStorage.removeItem(
+                "userId"
+              );
+
+              localStorage.removeItem(
+                "username"
+              );
+
+              localStorage.removeItem(
+                "token"
+              );
+
+              window.location.replace(
+                "/auth"
+              );
+
+            }}
+          >
+            Logout
           </button>
-        </Link>
 
-        <Link to="/profile">
-          <button className="profile-btn">
-            Profile
-          </button>
-        </Link>
-
-        <button
-
-          className="logout-btn"
-
-          onClick={() => {
-
-            localStorage.removeItem(
-              "userId"
-            );
-
-            localStorage.removeItem(
-              "username"
-            );
-
-            localStorage.removeItem(
-              "token"
-            );
-
-            window.location.replace(
-              "/auth"
-            );
-
-          }}
-        >
-          Logout
-        </button>
-
+        </div>
       </div>
 
     </nav>

@@ -108,3 +108,16 @@
 
   color: #2f81f7;
 }
+
+@media screen and (max-width: 480px) {
+  .auth-box {
+    width: 90%;
+    max-width: 400px;
+    padding: 24px;
+    gap: 16px;
+  }
+
+  .auth-logo h1 {
+    font-size: 28px;
+  }
+}

@@ -37,30 +37,29 @@ const CommitHistory = () => {
 
     }, [branch]);
 
-    const loadCommits =
-        async () => {
+    const loadCommits = async () => {
+    try {
+        const repo = await fetchRepositoryById(id);
 
-            try {
+        const allCommits = repo?.branches?.flatMap(branch =>
+            (branch.commits || []).map(commit => ({
+                ...commit,
+                branchName: branch.name
+            }))
+        ) || [];
 
-                const repo =
-                    await fetchRepositoryById(id);
+        allCommits.sort(
+            (a, b) =>
+                new Date(b.committedAt) -
+                new Date(a.committedAt)
+        );
 
-                const currentBranch =
-                    repo?.branches?.find(
-                        (b) =>
-                            b.name === branch
-                    );
+        setCommits(allCommits);
 
-                setCommits(
-                    currentBranch?.commits || []
-                );
-
-            } catch (err) {
-
-                console.error(err);
-
-            }
-        };
+    } catch (err) {
+        console.error(err);
+    }
+};
 
     return (
         <>
@@ -74,9 +73,13 @@ const CommitHistory = () => {
 
                 {
                     commits
-                        .slice()
-                        .reverse()
-                        .map((commit, index) => (
+                    .slice()
+                    .sort(
+                        (a, b) =>
+                            new Date(b.committedAt) -
+                            new Date(a.committedAt)
+                    )
+                    .map((commit, index) => (
 
                             <div
                                 key={index}
@@ -84,11 +87,11 @@ const CommitHistory = () => {
                                 className="commit-card"
 
                                 onClick={() =>
-                                    navigate(
-                                        `/repository/${id}/commit/${branch}/${commit._id}`
-                                    )
-                                }
-                            >
+                                navigate(
+                                            `/repository/${id}/commit/${commit.branchName}/${commit._id}`
+                                        )
+                                    }                          
+                                >
 
                                 <h3>
                                     {commit.message}
@@ -100,6 +103,10 @@ const CommitHistory = () => {
 
                                 <p>
                                     {commit.filePath}
+                                </p>
+
+                                <p>
+                                    Branch: {commit.branchName}
                                 </p>
 
                                 <small>
@@ -121,7 +128,7 @@ const CommitHistory = () => {
                                             await restoreCommit(
                                                 id,
                                                 commit._id,
-                                                branch
+                                                commit.branchName
                                             );
 
                                             alert(

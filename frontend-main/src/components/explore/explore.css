@@ -63,3 +63,17 @@
 
   font-size: 15px;
 }
+
+@media screen and (max-width: 768px) {
+  .explore-page {
+    padding: 20px 16px;
+  }
+
+  .explore-header h1 {
+    font-size: 28px;
+  }
+
+  .explore-header p {
+    font-size: 14px;
+  }
+}

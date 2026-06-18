@@ -263,9 +263,26 @@ async function getAllRepositories(
         .populate("owner")
         .populate("issues");
 
-    res.json(
-      repositories
-    );
+    const reposWithForkCount =
+      await Promise.all(
+
+        repositories.map(
+          async (repo) => {
+
+            const forkCount =
+              await Repository.countDocuments({
+                forkedFrom: repo._id
+              });
+
+            return {
+              ...repo.toObject(),
+              forkCount
+            };
+          }
+        )
+      );
+
+    res.json(reposWithForkCount);
 
   } catch (err) {
 
@@ -419,6 +436,33 @@ async function fetchRepositoriesForCurrentUser(
 
       });
 
+    const reposWithForkCount =
+      await Promise.all(
+
+        repositories.map(
+          async (repo) => {
+
+            const forkCount =
+              await Repository.countDocuments({
+
+                forkedFrom:
+                  repo._id
+
+              });
+
+            return {
+
+              ...repo.toObject(),
+
+              forkCount
+
+            };
+
+          }
+        )
+
+      );
+
     return res.status(200)
       .json({
 
@@ -426,9 +470,9 @@ async function fetchRepositoriesForCurrentUser(
           "Repositories fetched successfully!",
 
         repositories:
-          repositories || [],
-      });
+          reposWithForkCount
 
+      });
   } catch (err) {
 
     console.error(
@@ -1494,46 +1538,67 @@ async function forkRepository(
         });
     }
 
+    const existingFork =
+      await Repository.findOne({
+
+        owner,
+
+        name: originalRepo.name
+
+      });
+
+    if (existingFork) {
+
+      return res.status(400).json({
+
+        error:
+          "You have already forked this repository"
+
+      });
+
+    }
+
     const forkedRepo =
 
-    new Repository({
+      new Repository({
 
-      name: `${originalRepo.name}-fork-${Date.now()}`,
+        name:
+          `${originalRepo.name}-fork`,
 
-      description:
-        originalRepo.description,
+        description:
+          originalRepo.description,
 
-      visibility:
-        originalRepo.visibility,
+        visibility:
+          originalRepo.visibility,
 
-      owner,
+        owner,
 
-      forkedFrom:
-        originalRepo._id,
+        forkedFrom:
+          originalRepo._id,
 
-      files:
-        JSON.parse(
-          JSON.stringify(
-            originalRepo.files
-          )
-        ),
+        files:
+          JSON.parse(
+            JSON.stringify(
+              originalRepo.files
+            )
+          ),
 
-      commits:
-        JSON.parse(
-          JSON.stringify(
-            originalRepo.commits
-          )
-        ),
+        commits:
+          JSON.parse(
+            JSON.stringify(
+              originalRepo.commits
+            )
+          ),
 
-      branches:
-        JSON.parse(
-          JSON.stringify(
-            originalRepo.branches
-          )
-        ),
+        branches:
+          JSON.parse(
+            JSON.stringify(
+              originalRepo.branches
+            )
+          ),
 
-      issues: [],
-    });
+        issues: [],
+      });
 
     await forkedRepo.save();
 
@@ -1568,13 +1633,17 @@ async function forkRepository(
 
   } catch (err) {
 
-    console.error(err);
+    console.error(
+      "FORK ERROR:",
+      err
+    );
 
     res.status(500).json({
 
-      error:
-        "Failed to fork repository",
+      error: err.message
+
     });
+
   }
 }
 async function getProfileStats(

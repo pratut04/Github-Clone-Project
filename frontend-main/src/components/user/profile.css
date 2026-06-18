@@ -239,6 +239,8 @@
   padding: 24px;
 
   margin-bottom: 30px;
+
+  overflow-x: auto;
 }
 
 /* =========================

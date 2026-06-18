@@ -49,8 +49,9 @@ const RepoCard = ({
         </span>
 
         <span>
-          🍴 {repo.forks || 0}
+         🍴 {repo.forkCount || 0}
         </span>
+        
 
       </div>
 
