@@ -73,7 +73,7 @@ const Login = () => {
           alt="GitHub"
         />
 
-        <h1>GitHub</h1>
+        <h1>GitHub Clone Project</h1>
 
       </div>
 
